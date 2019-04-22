@@ -1,9 +1,18 @@
 1.有两组点，points_A和points_B
-2.A和B中随机各选取4个点成为‘内点’，其余成为‘外点’
-3.获取内点的单应性矩阵
-4.使用这个单应性矩阵测试其余‘外点’，设置一个阈值（偏离程度），将其分为‘新的内点’和‘新的外点’
-5.得到所有‘内点’， 回到第2步
-6.重复3-5步，循环k次， 直到‘内点’的个数不再变化，跳出递归 。最终的矩阵即为所求。
+2.A和B中随机各选取4个点成为‘内点’，组成初始内点集I，其余成为‘外点’。
+3.获取内点的单应性矩阵，得到模型M。
+
+while iter < k:(iter表示选取内点次数)
+4.使用这个单应性矩阵测试dataset中所有点，计算数据点与模型M之间的投影误差，设置一个阈值（偏离程度），若误差小于阈值，则计入‘内点集I’，得到I_new。
+5.更新一轮内点之后，len(I_new) > len(I), 则I = I_new
+6.更新k, k = log(1-p)/log(1-w**m), 其中p一般为0.995，m表示计算模型所需最少样本数=4，w = len(I)/len(Total)即内点所占比例。所以随着内点的增多，k不断变大。
+if iter > k: stop else 重复上面操作。    ******表示在某一次内点选择中，若选了k次选到的都是外点，则停止******
+
+停止条件：1.iter>k
+         2.len(I_new) == len(I)
+
+
+
 
 
 #求解单应性矩阵
@@ -25,7 +34,11 @@ def Homography(points_A_inline, points_B_inline):
         A@h = 0   #得到h中的8个未知数得到h 
     return h
 
-
+求k：
+def iter_num(p=0.995, m=4, w = len(I)/len(Total)):
+    k = log(1-p)/log(1-w**m)
+    return k
+    
 #对外点进行测试并更新内点
 def test(points_A_outline, points_A_inline, points_B_outline, points_B_inline):
     whlie len(points_A_inline) not change:    #循环停止条件：points_A_inline不再变化
@@ -33,7 +46,7 @@ def test(points_A_outline, points_A_inline, points_B_outline, points_B_inline):
         points_B_outline = points_B.remove(points_B_inline)
         for i in points_A_outline:  #遍历外点
             loc_B = h @ i.append(1)   #单应性转换
-            if sqrt(sum((points_B_outline[i][0] - loc_B[0])**2 + (points_B_outline[i][1] - loc_B[1])**2)) < threshold:   #判断转换后距离是否小于阈值
+            if 投影误差 < threshold:   #判断转换后误差是否小于阈值
                 points_B_inline.append(points_B_outline[i][:2])  #小于阈值的点添加到内点列表
                 points_A_inline.append(i[:2])
         h = Homography(points_A_inline, points_B_inline)
@@ -48,5 +61,8 @@ points_B_inline = np.random.choice(points_B, 4, len(points_B))
 # H矩阵
 h=[h11,h12,h13,h21,h22,h23,h31,h32,h33].T
 Homography(points_A_inline, points_B_inline)  #首次得到h
-test()  #更新内外点并返回最后的h
+while iter<k:
+    test()  #更新内外点并返回最后的h
+else:
+    stop
 #########################################################################################################
