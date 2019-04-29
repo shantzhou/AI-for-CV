@@ -21,3 +21,5 @@ MiniBatch_K_means:对于数据量太大的聚类。
 1.使用一个batch的数据训练处k个中心
 2.再使用一个batch更新这k个中心
 3.循环2，直到中心点稳定或者达到迭代次数，停止操作。
+
+https://www.letiantian.me/2014-03-15-kmeans-kmeans-plus-plus/
